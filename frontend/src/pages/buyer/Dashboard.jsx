@@ -88,7 +88,7 @@ export default function BuyerDashboard() {
           </h1>
 
           <p className="text-emerald-100 text-xs sm:text-sm mt-1">
-            Browse freshly listed crops, track active shipment, and support
+            Browse freshly listed crops, track active shipment, and supports
             local farming families.
           </p>
         </div>
