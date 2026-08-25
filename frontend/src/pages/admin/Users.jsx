@@ -160,7 +160,7 @@ function AdminUsers() {
                 <div className="bg-white border rounded-xl p-10 text-center">
 
                     <p className="text-gray-500">
-                        No users found.
+                        No user found.
                     </p>
 
                 </div>
