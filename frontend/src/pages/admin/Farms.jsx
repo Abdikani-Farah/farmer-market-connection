@@ -49,7 +49,7 @@ export default function AdminFarms() {
       <div>
         <div className="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-1">Farm Certification</div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900">Enrolled Farms & Growers</h1>
-        <p className="text-xs text-stone-500 mt-1">Review farm documentation, acreage, and manage verification badges.</p>
+        <p className="text-xs text-stone-500 mt-1">Review farm documentations, acreage, and manage verification badges.</p>
       </div>
 
       <div className="bg-white p-4 sm:p-6 rounded-2xl border border-stone-200 shadow-xs">
