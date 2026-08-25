@@ -85,7 +85,7 @@ function AdminOrders() {
                 </h1>
 
                 <p className="text-sm text-gray-500 mt-1">
-                    Manage all customer orders
+                    Manage all customer order
                 </p>
 
             </div>
