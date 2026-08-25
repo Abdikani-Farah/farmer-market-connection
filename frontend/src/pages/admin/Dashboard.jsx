@@ -217,7 +217,7 @@ export default function AdminDashboard() {
               to="/admin/farms"
               className="text-xs font-bold text-emerald-700 flex items-center gap-1"
             >
-              View All
+              View All users
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
