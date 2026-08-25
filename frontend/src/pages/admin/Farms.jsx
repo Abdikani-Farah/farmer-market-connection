@@ -74,7 +74,7 @@ export default function AdminFarms() {
               <thead className="bg-stone-50 border-b border-stone-200 font-bold uppercase tracking-wider text-stone-500">
                 <tr>
                   <th className="px-6 py-4">Farm</th>
-                  <th className="px-6 py-4">Farmer / Owner</th>
+                  <th className="px-6 py-4">Farmers / Owners</th>
                   <th className="px-6 py-4">Location / District</th>
                   <th className="px-6 py-4">Size & Crops</th>
                   <th className="px-6 py-4">Verification</th>
