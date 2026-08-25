@@ -66,7 +66,7 @@ export default function Login() {
             </div>
           </Link>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900">Welcome Back</h1>
-          <p className="text-xs text-stone-500">Sign in to your Farmer Market Connection account</p>
+          <p className="text-xs text-stone-500">Sign in to you Farmer Market Connection account</p>
         </div>
 
         {/* 1-Click Quick Demo Sign-In Cards */}
