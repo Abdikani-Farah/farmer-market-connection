@@ -84,7 +84,7 @@ export default function Navbar() {
                 SFarmer<span className="text-[#22C55E]">Market</span>
               </span>
               <span className="text-[9px] uppercase font-bold text-[#15803D] tracking-wider block">
-                Direct Connection
+                Direct Connections
               </span>
             </div>
           </Link>
