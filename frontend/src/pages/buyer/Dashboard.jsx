@@ -80,7 +80,7 @@ export default function BuyerDashboard() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-800 text-emerald-300 text-xs font-bold uppercase mb-2">
             <ShoppingBag className="w-3.5 h-3.5" />
-            <span>Buyers Portal</span>
+            <span>Buyer Portal</span>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-extrabold">
