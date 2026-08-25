@@ -81,7 +81,7 @@ export default function Navbar() {
             </div>
             <div>
               <span className="text-xl font-black tracking-tight text-[#1A2E05] block leading-tight">
-                Farmer<span className="text-[#22C55E]">Market</span>
+                SFarmer<span className="text-[#22C55E]">Market</span>
               </span>
               <span className="text-[9px] uppercase font-bold text-[#15803D] tracking-wider block">
                 Direct Connection
