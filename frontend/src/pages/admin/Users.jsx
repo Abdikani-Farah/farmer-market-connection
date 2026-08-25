@@ -176,7 +176,7 @@ function AdminUsers() {
                             <tr>
 
                                 <th className="px-5 py-3 text-sm">
-                                    User
+                                    Users
                                 </th>
 
                                 <th className="px-5 py-3 text-sm">
