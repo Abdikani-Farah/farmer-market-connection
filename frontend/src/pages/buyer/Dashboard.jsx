@@ -84,7 +84,7 @@ export default function BuyerDashboard() {
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-extrabold">
-            Welcome back , {user?.name}!
+            Welcome back, {user?.name}!
           </h1>
 
           <p className="text-emerald-100 text-xs sm:text-sm mt-1">
