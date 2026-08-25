@@ -234,7 +234,7 @@ export default function BuyerDashboard() {
               className="inline-flex items-center gap-1 bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl"
             >
               <Search className="w-4 h-4" />
-              <span>Explore Direct Marketplace</span>
+              <span>Explore Direct Marketplaces</span>
             </Link>
           </div>
         )}
