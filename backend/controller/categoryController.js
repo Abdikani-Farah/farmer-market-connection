@@ -1,8 +1,6 @@
 import Category from '../model/Category.js';
 import Product from '../model/Product.js';
 
-// @desc    Get all categories with product counts
-// @route   GET /api/categories
 export const getCategories = async (req, res, next) => {
   try {
     const categories = await Category.find().sort({ name: 1 });
