@@ -71,7 +71,7 @@ export default function BuyerDashboard() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-800 text-emerald-300 text-xs font-bold uppercase mb-2">
             <ShoppingBag className="w-3.5 h-3.5" />
-            <span>Buyer Portal</span>
+            <span>Buyers Portal</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold">Welcome back, {user?.name}!</h1>
           <p className="text-emerald-100 text-xs sm:text-sm mt-1">
