@@ -167,7 +167,7 @@ export default function Navbar() {
                               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-[#F0FDF4] hover:text-[#166534]"
                             >
                               <Package className="w-4 h-4 text-[#22C55E]" />
-                              My Harvests
+                              My Harvest
                             </Link>
                             <Link
                               to="/farmer/farm"
