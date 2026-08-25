@@ -24,7 +24,7 @@ export default function Contact() {
     setSubmitted(true);
   };
 
-  return (
+  retrn (
     <div className="min-h-screen bg-[#fafbf8] text-stone-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
 
