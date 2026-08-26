@@ -3,8 +3,10 @@ import Farm from '../model/Farm.js';
 import Product from '../model/Product.js';
 import Order from '../model/Order.js';
 import Review from '../model/Review.js';
+import bcrypt from 'bcrypt';
 
 const salesStatuses = ['COMPLETED', 'DELIVERED', 'PAID', 'ACCEPTED', 'PROCESSING', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY'];
+const ADMIN_CREATED_ROLES = ['BUYER', 'FARMER', 'ADMIN'];
 
 const buildStats = async () => {
   const [totalUsers, totalFarmers, totalBuyers, totalFarms, totalProducts, totalOrders, pendingOrders, completedOrders, salesAggregate] =
@@ -120,6 +122,76 @@ export const getAllUsers = async (req, res, next) => {
 
     const users = await User.find(filter).select('-password').sort({ createdAt: -1 });
     res.json({ success: true, count: users.length, data: users });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Create a user from the admin dashboard
+// @route   POST /api/admin/users
+export const createUser = async (req, res, next) => {
+  try {
+    const { name, email, phone, password, role, location, farmName, farmDescription } = req.body;
+    const selectedRole = (role || 'BUYER').toUpperCase();
+
+    if (!name?.trim() || !email?.trim() || !phone?.trim() || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name, email, phone, and password are required.',
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters.' });
+    }
+
+    if (!ADMIN_CREATED_ROLES.includes(selectedRole)) {
+      return res.status(400).json({ success: false, message: 'Choose a valid user role.' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'An account with this email already exists.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      name: name.trim(),
+      email: normalizedEmail,
+      phone: phone.trim(),
+      password: hashedPassword,
+      role: selectedRole,
+      location: location?.trim() || 'Mogadishu / Afgooye',
+    });
+
+    if (user.role === 'FARMER') {
+      await Farm.create({
+        farmer: user._id,
+        farmName: farmName?.trim() || `${user.name}'s Farm`,
+        description: farmDescription?.trim() || 'Producing fresh agricultural harvest for local markets.',
+        location: user.location,
+        region: 'Lower Shabelle',
+        district: 'Afgooye',
+        crops: [],
+        isVerified: false,
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      message: `${user.name} was added successfully.`,
+      data: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        location: user.location,
+        profileImage: user.profileImage,
+        isBlocked: user.isBlocked,
+      },
+    });
   } catch (error) {
     next(error);
   }
