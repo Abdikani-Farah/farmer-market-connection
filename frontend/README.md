@@ -1,16 +1,49 @@
-# React + Vite
+# Farmer Market Connection
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Farmer Market Connection waa MERN application isku xirta beeraleyda, iibsadayaasha, iyo maamulka suuqa. Waxay ka dhigtaa iibinta wax-soo-saarka beeraha mid sahlan, laga bilaabo soo-gelinta badeecadda ilaa delivery iyo xaqiijinta lacag-bixinta.
 
-Currently, two official plugins are available:
+## Project Workflow
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. **Register iyo Login**
+   - User-ku wuxuu sameystaa account isagoo ah Farmer, Buyer, ama Admin.
+   - JWT ayaa ilaalisa bogagga iyo API-yada u gaarka ah role kasta.
 
-## React Compiler
+2. **Farmer: Farm iyo Products**
+   - Farmer-ku wuxuu sameystaa ama cusboonaysiiyaa farm profile-kiisa.
+   - Wuxuu ku daraa agricultural products: magac, category, qiime, quantity, location, harvest date, description, iyo sawir.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+3. **Buyer: Browse iyo Order**
+   - Buyer-ku wuxuu raadiyaa ama filter-gareeyaa products iyo farms.
+   - Wuxuu arkaa product details kadibna sameeyaa order request.
+   - Buyer-ku wuxuu doortaa EVC Plus, SAAD, ama e-Dahab sida payment method.
 
-## Expanding the Oxlint configuration
+4. **Payment Verification**
+   - Buyer-ku wuxuu lacagta ugu diraa farmer-ka mobile wallet-kiisa.
+   - Wuxuu geliyaa lambarka mobile wallet-ka iyo transaction reference-ka.
+   - Farmer-ku wuxuu xaqiijiyaa payment-ka; kadib payment status-ku wuxuu noqdaa **PAID**.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+5. **Order Fulfillment**
+   - Farmer-ku wuu aqbali karaa ama diidi karaa order request-ka.
+   - Order-ku wuxuu maraa: `PENDING` → `ACCEPTED` → `PROCESSING` → `READY FOR DELIVERY` → `OUT FOR DELIVERY` → `DELIVERED` → `COMPLETED`.
+   - Buyer-ku wuxuu la socdaa status-ka dalabkiisa, xaqiijin karaa inuu helay, kana tagi karaa review.
+
+6. **Admin Management**
+   - Admin-ku wuxuu maamulaa users, farms, products, categories, iyo orders.
+   - Admin-ku wuxuu arkaa dashboard statistics iyo guud ahaan waxqabadka platform-ka.
+
+## Team
+
+Mashruucan waxaa dhisay:
+
+- Abdikani Farah Ali
+- Salad Ibrahim Mohamed
+- Abdijaliil Mohamed Abdulle
+
+## Frontend Setup
+
+```bash
+npm install
+npm run dev
+```
+
+Frontend-ka wuxaa ku dhisnay React, Vite, Tailwind CSS, Axios, iyo React Router.

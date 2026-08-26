@@ -20,10 +20,37 @@ import { errorHandler } from './middleware/errorMiddleware.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
+const missingEnvironmentVariables = ['MONGO_URI', 'JWT_SECRET'].filter((key) => !process.env[key]);
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+if (missingEnvironmentVariables.length > 0) {
+  throw new Error(`Missing required environment variables: ${missingEnvironmentVariables.join(', ')}`);
+}
+
+if (process.env.NODE_ENV === 'production' && !process.env.CLIENT_URL) {
+  throw new Error('CLIENT_URL is required when running in production');
+}
+
+const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      const error = new Error('Origin is not allowed by CORS');
+      error.statusCode = 403;
+      return callback(error);
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
+  })
+);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/api/health', (req, res) => {

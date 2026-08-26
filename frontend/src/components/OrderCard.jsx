@@ -28,6 +28,15 @@ const paymentBadges = {
   REFUNDED: 'bg-stone-100 text-stone-700 border-stone-300',
 };
 
+const adminNextStatuses = {
+  PENDING: ['ACCEPTED', 'REJECTED', 'CANCELLED'],
+  ACCEPTED: ['PROCESSING', 'CANCELLED'],
+  PROCESSING: ['READY_FOR_DELIVERY', 'CANCELLED'],
+  READY_FOR_DELIVERY: ['OUT_FOR_DELIVERY', 'CANCELLED'],
+  OUT_FOR_DELIVERY: ['DELIVERED', 'CANCELLED'],
+  DELIVERED: ['COMPLETED'],
+};
+
 export default function OrderCard({
   order,
   userRole,
@@ -105,6 +114,7 @@ export default function OrderCard({
   };
 
   const paymentLabel = paymentStatus === 'SUBMITTED' ? 'Awaiting farmer confirmation' : paymentStatus || 'PENDING';
+  const canSubmitPayment = ['ACCEPTED', 'PROCESSING', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(status);
 
   return (
     <div className="bg-white rounded-2xl border border-[#ECF1E4] shadow-xs hover:shadow-md transition-shadow overflow-hidden">
@@ -284,7 +294,7 @@ export default function OrderCard({
             {/* Buyer Actions */}
             {userRole === 'BUYER' && (
               <>
-                {!['REJECTED', 'CANCELLED'].includes(status) && paymentStatus !== 'PAID' && onOpenPaymentModal && (
+                {canSubmitPayment && paymentStatus !== 'PAID' && onOpenPaymentModal && (
                   <button
                     disabled={updating}
                     onClick={() => onOpenPaymentModal(order)}
@@ -293,6 +303,10 @@ export default function OrderCard({
                     <Wallet className="w-3.5 h-3.5" />
                     <span>{paymentStatus === 'SUBMITTED' ? 'Update Payment' : 'Pay by Mobile Wallet'}</span>
                   </button>
+                )}
+
+                {status === 'PENDING' && paymentStatus === 'PENDING' && (
+                  <span className="text-[11px] font-medium text-stone-500">Payment opens after farmer acceptance.</span>
                 )}
 
                 {status === 'PENDING' && (
@@ -346,15 +360,10 @@ export default function OrderCard({
                   onChange={(e) => handleAction(e.target.value)}
                   className="text-xs bg-[#F4F7F0] border border-[#ECF1E4] rounded-xl px-2.5 py-1.5 font-bold text-[#1A2E05]"
                 >
-                  <option value="PENDING">PENDING</option>
-                  <option value="ACCEPTED">ACCEPTED</option>
-                  <option value="PROCESSING">PROCESSING</option>
-                  <option value="READY_FOR_DELIVERY">READY_FOR_DELIVERY</option>
-                  <option value="OUT_FOR_DELIVERY">OUT_FOR_DELIVERY</option>
-                  <option value="DELIVERED">DELIVERED</option>
-                  <option value="COMPLETED">COMPLETED</option>
-                  <option value="REJECTED">REJECTED</option>
-                  <option value="CANCELLED">CANCELLED</option>
+                  <option value={status}>{status}</option>
+                  {(adminNextStatuses[status] || []).map((nextStatus) => (
+                    <option key={nextStatus} value={nextStatus}>{nextStatus}</option>
+                  ))}
                 </select>
               </div>
             )}

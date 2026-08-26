@@ -527,7 +527,7 @@ export default function ProductDetails() {
                     <option value="E_DAHAB">e-Dahab</option>
                   </select>
                   <p className="mt-2 text-sky-800">
-                    After sending the order, complete the transfer and enter its reference from your Buyer Orders page.
+                    After the farmer accepts the order, complete the transfer and enter its reference from your Buyer Orders page.
                   </p>
                 </div>
 

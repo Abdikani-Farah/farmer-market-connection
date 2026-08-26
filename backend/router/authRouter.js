@@ -9,12 +9,12 @@ import {
   updateProfile,
 } from '../controller/authController.js';
 import { deleteUser, getAllUsers, toggleBlockUser } from '../controller/adminController.js';
-import { requireAdmin, verifyToken } from '../middleware/authMiddleware.js';
+import { authRateLimit, requireAdmin, verifyToken } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.post('/register', register);
-router.post('/login', login);
+router.post('/register', authRateLimit, register);
+router.post('/login', authRateLimit, login);
 router.get('/me', verifyToken, getMe);
 router.post('/logout', logout);
 

@@ -1,8 +1,26 @@
 import Order from '../model/Order.js';
 import Product from '../model/Product.js';
-import User from '../model/User.js';
 
 const PAYMENT_METHODS = ['EVC_PLUS', 'SAAD', 'E_DAHAB'];
+const FARMER_TRANSITIONS = {
+  PENDING: ['ACCEPTED', 'REJECTED'],
+  ACCEPTED: ['PROCESSING'],
+  PROCESSING: ['READY_FOR_DELIVERY'],
+  READY_FOR_DELIVERY: ['OUT_FOR_DELIVERY'],
+  OUT_FOR_DELIVERY: ['DELIVERED'],
+};
+const BUYER_TRANSITIONS = {
+  PENDING: ['CANCELLED'],
+  DELIVERED: ['COMPLETED'],
+};
+const ADMIN_TRANSITIONS = {
+  PENDING: ['ACCEPTED', 'REJECTED', 'CANCELLED'],
+  ACCEPTED: ['PROCESSING', 'CANCELLED'],
+  PROCESSING: ['READY_FOR_DELIVERY', 'CANCELLED'],
+  READY_FOR_DELIVERY: ['OUT_FOR_DELIVERY', 'CANCELLED'],
+  OUT_FOR_DELIVERY: ['DELIVERED', 'CANCELLED'],
+  DELIVERED: ['COMPLETED'],
+};
 
 const getPopulatedOrder = (orderId) =>
   Order.findById(orderId)
@@ -10,6 +28,43 @@ const getPopulatedOrder = (orderId) =>
     .populate('farmer', 'name email phone location')
     .populate('paymentConfirmedBy', 'name')
     .populate('items.product', 'name images unit price');
+
+const reserveOrderStock = async (order) => {
+  const reservedItems = [];
+
+  try {
+    for (const item of order.items) {
+      if (!item.product) continue;
+
+      const product = await Product.findOneAndUpdate(
+        { _id: item.product, quantity: { $gte: item.quantity } },
+        { $inc: { quantity: -item.quantity } },
+        { new: true }
+      );
+
+      if (!product) {
+        const error = new Error(`Insufficient stock for ${item.productName || 'this product'}`);
+        error.statusCode = 400;
+        throw error;
+      }
+
+      reservedItems.push(item);
+    }
+  } catch (error) {
+    await Promise.all(
+      reservedItems.map((item) => Product.findByIdAndUpdate(item.product, { $inc: { quantity: item.quantity } }))
+    );
+    throw error;
+  }
+};
+
+const releaseOrderStock = async (order) => {
+  await Promise.all(
+    order.items
+      .filter((item) => item.product)
+      .map((item) => Product.findByIdAndUpdate(item.product, { $inc: { quantity: item.quantity } }))
+  );
+};
 
 // @desc    Create new order (Buyer requests product)
 // @route   POST /api/orders
@@ -151,7 +206,7 @@ export const getOrderById = async (req, res, next) => {
 // @route   PUT /api/orders/:id/status
 export const updateOrderStatus = async (req, res, next) => {
   try {
-    const { status, paymentStatus } = req.body;
+    const { status } = req.body;
     const order = await Order.findById(req.params.id);
 
     if (!order) {
@@ -166,60 +221,39 @@ export const updateOrderStatus = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Not authorized to modify this order' });
     }
 
-    // Role-specific allowed transitions:
-    if (isFarmer && !isAdmin) {
-      // Farmer can accept, reject, process, mark ready, dispatch, deliver
-      const allowedFarmerStatuses = [
-        'ACCEPTED',
-        'REJECTED',
-        'PROCESSING',
-        'READY_FOR_DELIVERY',
-        'OUT_FOR_DELIVERY',
-        'DELIVERED',
-      ];
-      if (status && !allowedFarmerStatuses.includes(status)) {
-        return res.status(400).json({
-          success: false,
-          message: `Farmers can only set status to: ${allowedFarmerStatuses.join(', ')}`,
-        });
-      }
+    if ('paymentStatus' in req.body) {
+      return res.status(400).json({
+        success: false,
+        message: 'Use the payment endpoints to submit or confirm a payment.',
+      });
     }
 
-    if (isBuyer && !isAdmin) {
-      // Buyer can cancel if PENDING, or confirm delivery/complete
-      if (status === 'CANCELLED' && order.status !== 'PENDING') {
-        return res.status(400).json({
-          success: false,
-          message: 'Order can only be cancelled while in PENDING status.',
-        });
-      }
-      if (status === 'COMPLETED' && !['DELIVERED', 'OUT_FOR_DELIVERY'].includes(order.status)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Order can be marked completed once delivered.',
-        });
-      }
+    if (typeof status !== 'string') {
+      return res.status(400).json({ success: false, message: 'A valid order status is required.' });
     }
 
-    if (status) {
-      order.status = status;
+    const nextStatus = status.toUpperCase();
+    const transitions = isAdmin ? ADMIN_TRANSITIONS : isFarmer ? FARMER_TRANSITIONS : BUYER_TRANSITIONS;
+    const allowedNextStatuses = transitions[order.status] || [];
 
-      // If order is completed or accepted, reduce product stock
-      if (status === 'ACCEPTED' || status === 'COMPLETED') {
-        for (const item of order.items) {
-          if (item.product) {
-            await Product.findByIdAndUpdate(item.product, {
-              $inc: { quantity: -item.quantity },
-            });
-          }
-        }
-      }
+    if (!allowedNextStatuses.includes(nextStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Order cannot move from ${order.status} to ${nextStatus}.`,
+      });
     }
 
-    if (paymentStatus) {
-      order.paymentStatus = paymentStatus;
+    if (nextStatus === 'ACCEPTED' && !order.stockReserved) {
+      await reserveOrderStock(order);
+      order.stockReserved = true;
     }
 
+    if (['REJECTED', 'CANCELLED'].includes(nextStatus) && order.stockReserved) {
+      await releaseOrderStock(order);
+      order.stockReserved = false;
+    }
+
+    order.status = nextStatus;
     await order.save();
 
     const updated = await Order.findById(order._id)
@@ -229,7 +263,7 @@ export const updateOrderStatus = async (req, res, next) => {
 
     res.json({
       success: true,
-      message: `Order status updated to ${order.status}`,
+      message: `Order status updated to ${nextStatus}`,
       data: updated,
     });
   } catch (error) {
@@ -252,8 +286,11 @@ export const submitPayment = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Only the buyer can submit payment details' });
     }
 
-    if (['CANCELLED', 'REJECTED'].includes(order.status)) {
-      return res.status(400).json({ success: false, message: 'Payment cannot be submitted for this order' });
+    if (!['ACCEPTED', 'PROCESSING', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(order.status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Wait for the farmer to accept the order before submitting payment.',
+      });
     }
 
     if (order.paymentStatus === 'PAID') {
@@ -264,16 +301,35 @@ export const submitPayment = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Choose EVC Plus, SAAD, or e-Dahab' });
     }
 
-    if (!paymentPhone?.trim() || !paymentReference?.trim()) {
+    if (
+      typeof paymentPhone !== 'string' ||
+      typeof paymentReference !== 'string' ||
+      !paymentPhone.trim() ||
+      !paymentReference.trim()
+    ) {
       return res.status(400).json({
         success: false,
         message: 'Your mobile number and transaction reference are required',
       });
     }
 
+    const normalizedReference = paymentReference.trim();
+    const duplicateReference = await Order.findOne({
+      _id: { $ne: order._id },
+      paymentReference: normalizedReference,
+      paymentStatus: { $in: ['SUBMITTED', 'PAID'] },
+    });
+
+    if (duplicateReference) {
+      return res.status(400).json({
+        success: false,
+        message: 'This transaction reference has already been used for another order.',
+      });
+    }
+
     order.paymentMethod = paymentMethod;
     order.paymentPhone = paymentPhone.trim();
-    order.paymentReference = paymentReference.trim();
+    order.paymentReference = normalizedReference;
     order.paymentStatus = 'SUBMITTED';
     order.paymentSubmittedAt = new Date();
     order.paymentConfirmedAt = undefined;

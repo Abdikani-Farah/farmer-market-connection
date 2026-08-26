@@ -1,7 +1,32 @@
 import jwt from 'jsonwebtoken';
 import User from '../model/User.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'farmer_market_secret_jwt_key_2026';
+const JWT_SECRET = process.env.JWT_SECRET;
+const authAttempts = new Map();
+const AUTH_WINDOW_MS = 15 * 60 * 1000;
+const AUTH_MAX_ATTEMPTS = 10;
+
+export const authRateLimit = (req, res, next) => {
+  const key = req.ip || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const attempt = authAttempts.get(key);
+
+  if (!attempt || now > attempt.resetAt) {
+    authAttempts.set(key, { count: 1, resetAt: now + AUTH_WINDOW_MS });
+    return next();
+  }
+
+  if (attempt.count >= AUTH_MAX_ATTEMPTS) {
+    return res.status(429).json({
+      success: false,
+      message: 'Too many login or registration attempts. Please try again in 15 minutes.',
+    });
+  }
+
+  attempt.count += 1;
+  authAttempts.set(key, attempt);
+  return next();
+};
 
 export const verifyToken = async (req, res, next) => {
   try {
@@ -71,4 +96,4 @@ export const authorizeRoles = (...allowedRoles) => {
 export const protect = verifyToken;
 export const requireAdmin = authorizeRoles('ADMIN');
 export const requireFarmer = authorizeRoles('FARMER', 'ADMIN');
-export const requireBuyer = authorizeRoles('BUYER', 'FARMER', 'ADMIN');
+export const requireBuyer = authorizeRoles('BUYER');

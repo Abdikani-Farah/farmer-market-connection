@@ -68,6 +68,10 @@ const orderSchema = new Schema(
       ],
       default: 'PENDING',
     },
+    stockReserved: {
+      type: Boolean,
+      default: false,
+    },
     paymentStatus: {
       type: String,
       enum: ['PENDING', 'SUBMITTED', 'PAID', 'FAILED', 'REFUNDED'],

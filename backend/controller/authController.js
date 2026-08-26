@@ -4,7 +4,8 @@ import User from '../model/User.js';
 import Farm from '../model/Farm.js';
 import Product from '../model/Product.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'farmer_market_secret_jwt_key_2026';
+const JWT_SECRET = process.env.JWT_SECRET;
+const PUBLIC_REGISTRATION_ROLES = ['BUYER', 'FARMER'];
 
 const generateToken = (id) => {
   return jwt.sign({ id }, JWT_SECRET, { expiresIn: '30d' });
@@ -20,6 +21,14 @@ export const register = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: 'Please provide all required fields (name, email, phone, password)',
+      });
+    }
+
+    const requestedRole = (role || 'BUYER').toUpperCase();
+    if (!PUBLIC_REGISTRATION_ROLES.includes(requestedRole)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Public registration is available for Buyer and Farmer accounts only.',
       });
     }
 
@@ -39,7 +48,7 @@ export const register = async (req, res, next) => {
       email: email.toLowerCase(),
       phone,
       password: hashedPassword,
-      role: role ? role.toUpperCase() : 'BUYER',
+      role: requestedRole,
       location: location || 'Afgooye Agricultural District',
     });
 
@@ -223,7 +232,18 @@ export const getUserById = async (req, res, next) => {
     const products = user.role === 'FARMER'
       ? await Product.find({ farmer: user._id, status: 'PUBLISHED' }).populate('category')
       : [];
-    res.json({ success: true, data: { ...user.toObject(), farm, products } });
+    res.json({
+      success: true,
+      data: {
+        _id: user._id,
+        name: user.name,
+        role: user.role,
+        location: user.location,
+        profileImage: user.profileImage,
+        farm,
+        products,
+      },
+    });
   } catch (error) {
     next(error);
   }
