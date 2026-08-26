@@ -38,6 +38,17 @@ export default function FarmerOrders() {
     }
   };
 
+  const handleConfirmPayment = async (orderId) => {
+    try {
+      const res = await api.patch(`/orders/${orderId}/payment/confirm`);
+      if (res.data.success) {
+        fetchOrders();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to confirm payment');
+    }
+  };
+
   const filteredOrders =
     filterStatus === 'ALL'
       ? orders
@@ -119,6 +130,7 @@ export default function FarmerOrders() {
               order={order}
               userRole="FARMER"
               onUpdateStatus={handleUpdateStatus}
+              onConfirmPayment={handleConfirmPayment}
             />
           ))}
         </div>

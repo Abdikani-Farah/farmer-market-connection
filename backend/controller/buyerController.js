@@ -37,6 +37,7 @@ export const getBuyerOrders = async (req, res, next) => {
     }
 
     const orders = await Order.find(filter)
+      .populate('buyer', 'name phone')
       .populate('farmer', 'name email phone location profileImage')
       .populate('items.product', 'name images unit price location description')
       .sort({ createdAt: -1 });

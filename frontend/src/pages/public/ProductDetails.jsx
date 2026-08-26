@@ -37,6 +37,7 @@ export default function ProductDetails() {
   const [orderQuantity, setOrderQuantity] = useState(10);
   const [deliveryAddress, setDeliveryAddress] = useState(user?.location || 'Mogadishu City Central Market');
   const [deliveryMethod, setDeliveryMethod] = useState('Direct Farm Pickup / Local Delivery');
+  const [paymentMethod, setPaymentMethod] = useState('EVC_PLUS');
   const [notes, setNotes] = useState('');
   const [orderSubmitting, setOrderSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
@@ -85,6 +86,7 @@ export default function ProductDetails() {
         deliveryAddress,
         deliveryMethod,
         notes,
+        paymentMethod,
       });
 
       if (res.data.success) {
@@ -509,6 +511,24 @@ export default function ProductDetails() {
                     <option value="Farmer Dispatch Truck">Farmer Dispatch Truck</option>
                     <option value="Wholesale Logistics Delivery">Wholesale Logistics Delivery</option>
                   </select>
+                </div>
+
+                {/* Payment methods */}
+                <div className="rounded-2xl border border-sky-100 bg-sky-50 p-3.5 text-xs text-sky-950">
+                  <label className="font-bold" htmlFor="payment-method">Mobile wallet payment</label>
+                  <select
+                    id="payment-method"
+                    value={paymentMethod}
+                    onChange={(event) => setPaymentMethod(event.target.value)}
+                    className="mt-2 w-full rounded-xl border border-sky-200 bg-white px-3 py-2 font-semibold text-sky-950 outline-none focus:border-sky-500"
+                  >
+                    <option value="EVC_PLUS">EVC Plus</option>
+                    <option value="SAAD">SAAD</option>
+                    <option value="E_DAHAB">e-Dahab</option>
+                  </select>
+                  <p className="mt-2 text-sky-800">
+                    After sending the order, complete the transfer and enter its reference from your Buyer Orders page.
+                  </p>
                 </div>
 
                 {/* Notes */}

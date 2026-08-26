@@ -11,9 +11,31 @@ import {
   AlertCircle,
   Star,
   ChevronRight,
+  Wallet,
 } from 'lucide-react';
 
-export default function OrderCard({ order, userRole, onUpdateStatus, onOpenReviewModal }) {
+const paymentLabels = {
+  EVC_PLUS: 'EVC Plus',
+  SAAD: 'SAAD',
+  E_DAHAB: 'e-Dahab',
+};
+
+const paymentBadges = {
+  PENDING: 'bg-amber-100 text-amber-800 border-amber-300',
+  SUBMITTED: 'bg-sky-100 text-sky-800 border-sky-300',
+  PAID: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+  FAILED: 'bg-rose-100 text-rose-800 border-rose-300',
+  REFUNDED: 'bg-stone-100 text-stone-700 border-stone-300',
+};
+
+export default function OrderCard({
+  order,
+  userRole,
+  onUpdateStatus,
+  onOpenReviewModal,
+  onOpenPaymentModal,
+  onConfirmPayment,
+}) {
   const [updating, setUpdating] = useState(false);
 
   if (!order) return null;
@@ -23,6 +45,8 @@ export default function OrderCard({ order, userRole, onUpdateStatus, onOpenRevie
     createdAt,
     status,
     paymentStatus,
+    paymentMethod,
+    paymentReference,
     totalAmount,
     items = [],
     buyer,
@@ -72,6 +96,15 @@ export default function OrderCard({ order, userRole, onUpdateStatus, onOpenRevie
     await onUpdateStatus(_id, newStatus);
     setUpdating(false);
   };
+
+  const handlePaymentConfirmation = async () => {
+    if (!onConfirmPayment) return;
+    setUpdating(true);
+    await onConfirmPayment(_id);
+    setUpdating(false);
+  };
+
+  const paymentLabel = paymentStatus === 'SUBMITTED' ? 'Awaiting farmer confirmation' : paymentStatus || 'PENDING';
 
   return (
     <div className="bg-white rounded-2xl border border-[#ECF1E4] shadow-xs hover:shadow-md transition-shadow overflow-hidden">
@@ -153,6 +186,29 @@ export default function OrderCard({ order, userRole, onUpdateStatus, onOpenRevie
           </div>
         )}
 
+        {/* Payment */}
+        <div className="rounded-2xl border border-[#ECF1E4] bg-[#F4F7F0]/60 p-3.5 text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-[#1A2E05]">
+              <Wallet className="h-4 w-4 text-[#22C55E]" />
+              <span className="font-bold">Payment</span>
+              {paymentMethod && <span className="text-stone-500">via {paymentLabels[paymentMethod] || paymentMethod}</span>}
+            </div>
+            <span
+              className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${
+                paymentBadges[paymentStatus] || paymentBadges.PENDING
+              }`}
+            >
+              {paymentLabel}
+            </span>
+          </div>
+          {paymentReference && (
+            <div className="mt-2 text-[11px] text-stone-500">
+              Transfer reference: <span className="font-mono font-semibold text-stone-700">{paymentReference}</span>
+            </div>
+          )}
+        </div>
+
         {/* Total & Action Buttons */}
         <div className="pt-3 border-t border-[#ECF1E4] flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -228,6 +284,17 @@ export default function OrderCard({ order, userRole, onUpdateStatus, onOpenRevie
             {/* Buyer Actions */}
             {userRole === 'BUYER' && (
               <>
+                {!['REJECTED', 'CANCELLED'].includes(status) && paymentStatus !== 'PAID' && onOpenPaymentModal && (
+                  <button
+                    disabled={updating}
+                    onClick={() => onOpenPaymentModal(order)}
+                    className="px-4 py-2 rounded-full bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-bold text-xs transition-colors flex items-center gap-1 shadow-md shadow-sky-200/50"
+                  >
+                    <Wallet className="w-3.5 h-3.5" />
+                    <span>{paymentStatus === 'SUBMITTED' ? 'Update Payment' : 'Pay by Mobile Wallet'}</span>
+                  </button>
+                )}
+
                 {status === 'PENDING' && (
                   <button
                     disabled={updating}
@@ -258,6 +325,17 @@ export default function OrderCard({ order, userRole, onUpdateStatus, onOpenRevie
                   </button>
                 )}
               </>
+            )}
+
+            {userRole === 'FARMER' && paymentStatus === 'SUBMITTED' && onConfirmPayment && (
+              <button
+                disabled={updating}
+                onClick={handlePaymentConfirmation}
+                className="px-4 py-2 rounded-full bg-[#166534] hover:bg-[#14532D] disabled:opacity-50 text-white font-bold text-xs transition-colors flex items-center gap-1 shadow-md shadow-green-200/50"
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
+                <span>Confirm Payment</span>
+              </button>
             )}
 
             {/* Admin Actions */}

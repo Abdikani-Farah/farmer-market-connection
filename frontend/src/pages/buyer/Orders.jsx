@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../context/AuthContext.jsx';
 import OrderCard from '../../components/OrderCard.jsx';
+import PaymentModal from '../../components/PaymentModal.jsx';
 import { ShoppingBag, Star, X, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function BuyerOrders() {
@@ -8,6 +9,7 @@ export default function BuyerOrders() {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [error, setError] = useState(null);
+  const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);
 
   // Review Modal State
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
@@ -140,9 +142,18 @@ export default function BuyerOrders() {
               userRole="BUYER"
               onUpdateStatus={handleUpdateStatus}
               onOpenReviewModal={handleOpenReviewModal}
+              onOpenPaymentModal={setSelectedOrderForPayment}
             />
           ))}
         </div>
+      )}
+
+      {selectedOrderForPayment && (
+        <PaymentModal
+          order={selectedOrderForPayment}
+          onClose={() => setSelectedOrderForPayment(null)}
+          onSubmitted={fetchOrders}
+        />
       )}
 
       {/* --- REVIEW FARMER MODAL --- */}

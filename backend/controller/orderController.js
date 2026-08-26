@@ -2,17 +2,30 @@ import Order from '../model/Order.js';
 import Product from '../model/Product.js';
 import User from '../model/User.js';
 
+const PAYMENT_METHODS = ['EVC_PLUS', 'SAAD', 'E_DAHAB'];
+
+const getPopulatedOrder = (orderId) =>
+  Order.findById(orderId)
+    .populate('buyer', 'name email phone location')
+    .populate('farmer', 'name email phone location')
+    .populate('paymentConfirmedBy', 'name')
+    .populate('items.product', 'name images unit price');
+
 // @desc    Create new order (Buyer requests product)
 // @route   POST /api/orders
 export const createOrder = async (req, res, next) => {
   try {
-    const { productId, quantity, deliveryAddress, deliveryMethod, notes } = req.body;
+    const { productId, quantity, deliveryAddress, deliveryMethod, notes, paymentMethod } = req.body;
 
     if (!productId || !quantity || Number(quantity) <= 0) {
       return res.status(400).json({
         success: false,
         message: 'Valid product and quantity required',
       });
+    }
+
+    if (paymentMethod && !PAYMENT_METHODS.includes(paymentMethod)) {
+      return res.status(400).json({ success: false, message: 'Choose EVC Plus, SAAD, or e-Dahab' });
     }
 
     const product = await Product.findById(productId);
@@ -48,6 +61,7 @@ export const createOrder = async (req, res, next) => {
       notes: notes || '',
       status: 'PENDING',
       paymentStatus: 'PENDING',
+      paymentMethod: paymentMethod || null,
     });
 
     const populatedOrder = await Order.findById(order._id)
@@ -216,6 +230,96 @@ export const updateOrderStatus = async (req, res, next) => {
     res.json({
       success: true,
       message: `Order status updated to ${order.status}`,
+      data: updated,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Submit a mobile-wallet payment reference for an order
+// @route   POST /api/orders/:id/payment
+export const submitPayment = async (req, res, next) => {
+  try {
+    const { paymentMethod, paymentPhone, paymentReference } = req.body;
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    if (order.buyer.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Only the buyer can submit payment details' });
+    }
+
+    if (['CANCELLED', 'REJECTED'].includes(order.status)) {
+      return res.status(400).json({ success: false, message: 'Payment cannot be submitted for this order' });
+    }
+
+    if (order.paymentStatus === 'PAID') {
+      return res.status(400).json({ success: false, message: 'This order has already been paid' });
+    }
+
+    if (!PAYMENT_METHODS.includes(paymentMethod)) {
+      return res.status(400).json({ success: false, message: 'Choose EVC Plus, SAAD, or e-Dahab' });
+    }
+
+    if (!paymentPhone?.trim() || !paymentReference?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Your mobile number and transaction reference are required',
+      });
+    }
+
+    order.paymentMethod = paymentMethod;
+    order.paymentPhone = paymentPhone.trim();
+    order.paymentReference = paymentReference.trim();
+    order.paymentStatus = 'SUBMITTED';
+    order.paymentSubmittedAt = new Date();
+    order.paymentConfirmedAt = undefined;
+    order.paymentConfirmedBy = null;
+    await order.save();
+
+    const updated = await getPopulatedOrder(order._id);
+    res.json({
+      success: true,
+      message: 'Payment details submitted. The farmer will verify the transfer.',
+      data: updated,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Confirm a buyer-submitted mobile-wallet payment
+// @route   PATCH /api/orders/:id/payment/confirm
+export const confirmPayment = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    const isFarmer = order.farmer.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'ADMIN';
+    if (!isFarmer && !isAdmin) {
+      return res.status(403).json({ success: false, message: 'Only the farmer can confirm this payment' });
+    }
+
+    if (order.paymentStatus !== 'SUBMITTED') {
+      return res.status(400).json({ success: false, message: 'There is no submitted payment to confirm' });
+    }
+
+    order.paymentStatus = 'PAID';
+    order.paymentConfirmedAt = new Date();
+    order.paymentConfirmedBy = req.user._id;
+    await order.save();
+
+    const updated = await getPopulatedOrder(order._id);
+    res.json({
+      success: true,
+      message: 'Payment confirmed successfully',
       data: updated,
     });
   } catch (error) {

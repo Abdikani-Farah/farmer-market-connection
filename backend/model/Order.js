@@ -70,8 +70,30 @@ const orderSchema = new Schema(
     },
     paymentStatus: {
       type: String,
-      enum: ['PENDING', 'PAID', 'FAILED', 'REFUNDED'],
+      enum: ['PENDING', 'SUBMITTED', 'PAID', 'FAILED', 'REFUNDED'],
       default: 'PENDING',
+    },
+    paymentMethod: {
+      type: String,
+      enum: ['EVC_PLUS', 'SAAD', 'E_DAHAB'],
+      default: null,
+    },
+    paymentPhone: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    paymentReference: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    paymentSubmittedAt: Date,
+    paymentConfirmedAt: Date,
+    paymentConfirmedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
     },
   },
   {
